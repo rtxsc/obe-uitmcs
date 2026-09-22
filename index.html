@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBE-ANAS v4 | UiTM Sarawak FKE Attainment Analysis System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS Excel Library -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        uitm: {
+                            purple: '#3A0066',
+                            purpleDark: '#280047',
+                            purpleLight: '#550096',
+                            gold: '#FFAE00',
+                            goldHover: '#E09900',
+                            navy: '#0F172A',
+                            slate: '#F8FAFC'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .sidebar-active {
+            background-color: rgba(255, 174, 0, 0.18);
+            border-left: 4px solid #FFAE00;
+            color: #ffffff !important;
+            font-weight: 700;
+        }
+        .input-po-white {
+            background-color: #ffffff;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+            text-align: center;
+            font-weight: 700;
+            width: 100%;
+            height: 32px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .input-po-white:focus {
+            border-color: #3A0066;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(58, 0, 102, 0.2);
+        }
+        .po-black-cell {
+            background-color: #0f172a !important;
+            color: #475569 !important;
+            user-select: none;
+        }
+        @media print {
+            aside, header, .no-print { display: none !important; }
+            main { padding: 0 !important; width: 100% !important; }
+            .print-break-inside-prevent { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased text-slate-800 bg-slate-100 flex flex-col md:flex-row min-h-screen">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-full md:w-72 bg-uitm-purpleDark text-white flex-shrink-0 flex flex-col justify-between border-r border-purple-900/50 shadow-xl z-20 no-print">
+        <div class="flex flex-col h-full">
+            <!-- UiTM FKE Brand Header -->
+            <div class="p-5 border-b border-purple-800/60 flex items-center space-x-3 bg-purple-950/40">
+                <div class="w-11 h-11 bg-white rounded-xl flex items-center justify-center font-extrabold text-uitm-purple text-xl border-2 border-uitm-gold shadow-md flex-shrink-0">
+                    UiTM
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg text-white tracking-wide leading-tight">OBE-ANAS</h1>
+                    <p class="text-[10px] text-purple-200 font-semibold tracking-wider">UiTM Sarawak • FKE</p>
+                    <p class="text-[10px] text-purple-200 uppercase font-semibold tracking-wider">EE111</p>
+
+                </div>
+            </div>
+
+            <!-- Academic Program Banner -->
+            <div class="mx-4 my-3 p-3 bg-purple-900/50 rounded-xl border border-purple-700/40 text-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-uitm-gold font-bold">Diploma Electrical Eng.</span>
+                    <span class="bg-uitm-gold text-uitm-purple font-extrabold px-1.5 py-0.5 rounded text-[9px]">EE110/EE111</span>
+                </div>
+                <p class="text-[11px] text-purple-200 mt-1">ETAC Revised Standard • 11 POs</p>
+            </div>
+
+            <!-- Scrollable Navigation Items -->
+            <nav class="mt-1 px-3 space-y-1 text-xs overflow-y-auto flex-1 pb-4">
+                <p class="px-3 py-1.5 text-[10px] uppercase font-extrabold text-purple-300/80 tracking-wider">Overall Analysis</p>
+                
+                <button onclick="switchTab('summary')" id="nav-summary" class="w-full text-left flex items-center px-3 py-2.5 rounded-lg text-purple-100 hover:bg-purple-800/50 transition-all sidebar-active">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 mr-2.5 text-uitm-gold"></i>
+                    <span>Executive Summary</span>
+                </button>
+
+                <!-- Admin Subject Data Entry Navigation -->
+                <p class="px-3 py-1.5 mt-4 text-[10px] uppercase font-extrabold text-purple-300/80 tracking-wider">Data Administration</p>
+                
+                <button onclick="switchTab('admin-entry')" id="nav-admin-entry" class="w-full text-left flex items-center px-3 py-2.5 rounded-lg text-purple-100 hover:bg-purple-800/50 transition-all">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-2.5 text-emerald-400"></i>
+                    <div class="flex flex-col">
+                        <span class="font-bold">Subject PO Entry (Admin)</span>
+                        <span class="text-[10px] text-emerald-300 font-normal">Input Subject Attainments</span>
+                    </div>
+                </button>
+
+                <!-- Cohort Group Navigation -->
+                <p class="px-3 py-1.5 mt-4 text-[10px] uppercase font-extrabold text-purple-300/80 tracking-wider">Cohort Longitudinal Views</p>
+                
+                <button onclick="switchTab('cohort-20254')" id="nav-cohort-20254" class="w-full text-left flex items-center px-3 py-2.5 rounded-lg text-purple-100 hover:bg-purple-800/50 transition-all">
+                    <i data-lucide="users" class="w-4 h-4 mr-2.5 text-emerald-400"></i>
+                    <div class="flex flex-col">
+                        <span class="font-bold">Cohort 20254</span>
+                        <span class="text-[10px] text-purple-300 font-normal">Part 1 (20254) → Part 2 (20262)</span>
+                    </div>
+                </button>
+
+                <button onclick="switchTab('cohort-20244')" id="nav-cohort-20244" class="w-full text-left flex items-center px-3 py-2.5 rounded-lg text-purple-100 hover:bg-purple-800/50 transition-all">
+                    <i data-lucide="users" class="w-4 h-4 mr-2.5 text-sky-400"></i>
+                    <div class="flex flex-col">
+                        <span class="font-bold">Cohort 20244</span>
+                        <span class="text-[10px] text-purple-300 font-normal">Part 3 (20254) → Part 4 (20262)</span>
+                    </div>
+                </button>
+
+                <button onclick="switchTab('cohort-20234')" id="nav-cohort-20234" class="w-full text-left flex items-center px-3 py-2.5 rounded-lg text-purple-100 hover:bg-purple-800/50 transition-all">
+                    <i data-lucide="award" class="w-4 h-4 mr-2.5 text-amber-400"></i>
+                    <div class="flex flex-col">
+                        <span class="font-bold">Cohort 20234 (Graduating)</span>
+                        <span class="text-[10px] text-purple-300 font-normal">Part 5 (20254) → Part 6 (20262)</span>
+                    </div>
+                </button>
+
+                <!-- Semester Group Navigation -->
+                <p class="px-3 py-1.5 mt-4 text-[10px] uppercase font-extrabold text-purple-300/80 tracking-wider">Semester Reports</p>
+                
+                <button onclick="switchTab('sem-20254')" id="nav-sem-20254" class="w-full text-left flex items-center px-3 py-2 rounded-lg text-purple-100 hover:bg-purple-800/50 transition-all">
+                    <i data-lucide="calendar" class="w-4 h-4 mr-2.5 text-purple-300"></i>
+                    <span>Semester 20254 (Oct 25 - Feb 26)</span>
+                </button>
+                
+                <button onclick="switchTab('sem-20262')" id="nav-sem-20262" class="w-full text-left flex items-center px-3 py-2 rounded-lg text-purple-100 hover:bg-purple-800/50 transition-all">
+                    <i data-lucide="calendar" class="w-4 h-4 mr-2.5 text-amber-300"></i>
+                    <span>Semester 20262 (Mar 26 - Aug 26)</span>
+                </button>
+                
+                <button onclick="switchTab('sem-20264')" id="nav-sem-20264" class="w-full text-left flex items-center px-3 py-2 rounded-lg text-purple-100 hover:bg-purple-800/50 transition-all">
+                    <i data-lucide="calendar-plus" class="w-4 h-4 mr-2.5 text-emerald-400"></i>
+                    <div class="flex flex-col">
+                        <span class="font-bold flex items-center">
+                            Semester 20264
+                            <span class="ml-1.5 bg-emerald-500 text-white font-extrabold text-[9px] px-1.5 py-0.2 rounded">UPCOMING</span>
+                        </span>
+                        <span class="text-[10px] text-purple-300 font-normal">Oct 26 - Feb 27 • Part 1, 3, 5</span>
+                    </div>
+                </button>
+
+                <!-- ETAC Reference Nav -->
+                <p class="px-3 py-1.5 mt-4 text-[10px] uppercase font-extrabold text-purple-300/80 tracking-wider">Standards & Auditing</p>
+                <button onclick="openEtacModal()" class="w-full text-left flex items-center px-3 py-2 rounded-lg text-purple-100 hover:bg-purple-800/50 transition-all">
+                    <i data-lucide="book-open" class="w-4 h-4 mr-2.5 text-uitm-gold"></i>
+                    <span>ETAC 11 PO Definitions</span>
+                </button>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="p-4 border-t border-purple-800/60 bg-purple-950/60 text-[11px] text-purple-300">
+                <div class="flex items-center justify-between">
+                    <span>ETAC KPI Threshold</span>
+                    <span class="bg-emerald-500 text-white font-extrabold px-1.5 py-0.5 rounded text-[10px]" id="benchmarkValDisplay">50.0%</span>
+                </div>
+                <p class="mt-1 text-[10px] text-purple-300/70">UiTM Sarawak FKE Accreditation</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+
+        <!-- Top Header Controls -->
+        <header class="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-10 shadow-sm no-print">
+            <div>
+                <h2 class="text-xl font-extrabold text-slate-800" id="pageTitle">Executive Summary Dashboard</h2>
+                <p class="text-xs text-slate-500" id="pageSubtitle">Program Outcome Attainment Analysis (Semesters 20254 & 20262)</p>
+            </div>
+
+            <!-- Benchmark Slider & Print Actions -->
+            <div class="flex items-center space-x-4 bg-slate-50 p-2.5 rounded-xl border border-slate-200 shadow-inner">
+                <div class="text-xs">
+                    <label for="benchmarkSlider" class="block font-bold text-slate-700">KPI Target: <span id="sliderLabel" class="text-uitm-purple">50%</span></label>
+                    <span class="text-[10px] text-slate-500">ETAC Minimum Target</span>
+                </div>
+                <input type="range" id="benchmarkSlider" min="40" max="75" value="50" step="1" oninput="updateBenchmarkThreshold(this.value)" class="w-28 accent-uitm-purple cursor-pointer">
+                
+                <div class="h-6 w-px bg-slate-300"></div>
+
+                <button onclick="window.print()" class="bg-uitm-purple hover:bg-uitm-purpleDark text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center transition shadow-sm">
+                    <i data-lucide="printer" class="w-3.5 h-3.5 mr-1.5"></i> Print / PDF
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Main Workspace -->
+        <main class="p-6 space-y-6 flex-1">
+
+            <!-- 1. EXECUTIVE SUMMARY VIEW -->
+            <div id="view-summary" class="space-y-6">
+
+                <!-- Executive Top KPI Metric Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 relative overflow-hidden">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sem 20254 Overall Avg</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800 mt-1" id="kpiAvg20254">78.37%</h3>
+                        <p class="text-xs text-emerald-600 font-semibold mt-1 flex items-center">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1"></i> Part 1, Part 3, Part 5
+                        </p>
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-uitm-purple"></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 relative overflow-hidden">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sem 20262 Overall Avg</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800 mt-1" id="kpiAvg20262">76.88%</h3>
+                        <p class="text-xs text-emerald-600 font-semibold mt-1 flex items-center">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1"></i> Part 2, Part 4, Part 6
+                        </p>
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-uitm-gold"></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 relative overflow-hidden">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">KPI Attainment Rate</p>
+                        <h3 class="text-2xl font-extrabold text-emerald-600 mt-1" id="kpiMetRate">100.0%</h3>
+                        <p class="text-xs text-slate-500 mt-1">All assessed POs ≥ Target (50%)</p>
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 relative overflow-hidden">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Cohorts Tracked</p>
+                        <h3 class="text-2xl font-extrabold text-slate-800 mt-1">3 Cohort Groups</h3>
+                        <p class="text-xs text-slate-500 mt-1">Cohorts 20254, 20244 & 20234</p>
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-sky-500"></div>
+                    </div>
+                </div>
+
+                <!-- Main Comparative Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Bar Chart: Semester 20254 vs Semester 20262 -->
+                    <div class="lg:col-span-7 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col print-break-inside-prevent">
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                    <i data-lucide="bar-chart-2" class="w-5 h-5 mr-2 text-uitm-purple"></i>
+                                    Semester Outcome Attainment (Sem 20254 vs Sem 20262)
+                                </h3>
+                                <p class="text-xs text-slate-500">Average PO scores calculated across evaluated subjects</p>
+                            </div>
+                        </div>
+                        <div class="relative flex-1 min-h-[300px]">
+                            <canvas id="summaryBarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Progression Line Chart -->
+                    <div class="lg:col-span-5 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col print-break-inside-prevent">
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                    <i data-lucide="trending-up" class="w-5 h-5 mr-2 text-emerald-600"></i>
+                                    Progression Across Study Parts
+                                </h3>
+                                <p class="text-xs text-slate-500">Average PO performance trajectory from Part 1 to Part 6</p>
+                            </div>
+                        </div>
+                        <div class="relative flex-1 min-h-[300px]">
+                            <canvas id="progressionLineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Complete PO Data Matrix Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                <i data-lucide="table" class="w-5 h-5 mr-2 text-uitm-purple"></i>
+                                Full ETAC 11 POs Attainment Summary Matrix
+                            </h3>
+                            <p class="text-xs text-slate-500">Detailed PO scores mapped across all 6 academic study parts</p>
+                        </div>
+                        <div class="flex items-center space-x-2 no-print">
+                            <input type="text" id="summarySearchInput" onkeyup="filterSummaryTable()" placeholder="Search PO or name..." class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs w-48 focus:outline-none focus:ring-2 focus:ring-uitm-purple">
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto mt-4">
+                        <table class="w-full text-xs text-left border-collapse" id="summaryTable">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 uppercase font-bold text-[11px]">
+                                    <th class="py-3 px-3">PO Code</th>
+                                    <th class="py-3 px-3">ETAC Outcome Descriptor</th>
+                                    <th class="py-3 px-3 text-center bg-purple-50">Part 1 (20254)</th>
+                                    <th class="py-3 px-3 text-center bg-purple-50">Part 3 (20254)</th>
+                                    <th class="py-3 px-3 text-center bg-purple-50">Part 5 (20234)</th>
+                                    <th class="py-3 px-3 text-center bg-amber-50">Part 2 (20254)</th>
+                                    <th class="py-3 px-3 text-center bg-amber-50">Part 4 (20244)</th>
+                                    <th class="py-3 px-3 text-center bg-amber-50">Part 6 (20234)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200" id="summaryTableBody">
+                                <!-- JavaScript populates summary rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 2. ADMIN SUBJECT PO ENTRY VIEW -->
+            <div id="view-admin-entry" class="space-y-6 hidden">
+                <div class="bg-slate-900 text-white rounded-xl p-5 shadow-lg border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-uitm-gold text-uitm-purple font-extrabold px-2.5 py-0.5 rounded text-xs uppercase">ADMIN WORKSHEET</span>
+                            <span class="text-slate-400 text-xs">Fakulti Kejuruteraan Elektrik (UiTM Sarawak)</span>
+                        </div>
+                        <h3 class="text-xl font-extrabold mt-1 text-white">Subject-Specific PO Attainment Entry</h3>
+                        <p class="text-xs text-slate-300 mt-0.5">Enter course PO results. White boxes indicate active PO assessment; black boxes represent Not Applicable (N/A).</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="recalculateAdminData()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-lg flex items-center transition shadow">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 mr-1.5"></i> Calculate Average POs
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin Chart Visualization of Subject Input Averages -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex items-center justify-between mb-3 border-b pb-2">
+                        <h4 class="text-sm font-bold text-slate-800 flex items-center">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4 mr-2 text-uitm-purple"></i>
+                            Dynamic PO Average Visualization (Calculated from Active Course Inputs)
+                        </h4>
+                        <span class="text-xs text-slate-500 font-semibold">ETAC Benchmark: 50%</span>
+                    </div>
+                    <div class="relative h-64">
+                        <canvas id="adminVisualizationChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Subject-Specific Matrix Entry Sheet -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 overflow-x-auto">
+                    <div class="flex items-center justify-between mb-4 border-b pb-3">
+                        <h4 class="text-sm font-bold text-slate-800 flex items-center">
+                            <i data-lucide="file-input" class="w-4 h-4 mr-2 text-uitm-purple"></i>
+                            SEPT 2025 COHORT 1 — Intake: 20254 Data Input Sheet
+                        </h4>
+                        <span class="text-xs bg-purple-100 text-uitm-purple font-bold px-2.5 py-1 rounded">Live Formula Active</span>
+                    </div>
+
+                    <table class="w-full text-xs text-left border-collapse min-w-[900px]" id="adminEntryTable">
+                        <thead>
+                            <tr class="bg-slate-800 text-white uppercase text-[10px]">
+                                <th class="p-2 border border-slate-700 w-48">Kod Kursus & Subject Name</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO1</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO2</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO3</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO4</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO5</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO6</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO7</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO8</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO9</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO10</th>
+                                <th class="p-2 border border-slate-700 text-center w-12">PO11</th>
+                            </tr>
+                            <tr class="bg-slate-200 text-slate-700 text-center font-bold text-[10px]">
+                                <td class="p-1 border border-slate-300 text-left px-2">Unit % Descriptor</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                                <td class="p-1 border border-slate-300">%</td>
+                            </tr>
+                        </thead>
+                        <tbody id="adminEntryTableBody">
+                            <!-- Populated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. COHORT / SEMESTER DEDICATED VIEW (DYNAMIC) -->
+            <div id="view-detail" class="space-y-6 hidden">
+                
+                <!-- Semester Excel Upload Module -->
+                <div id="semesterExcelUploadCard" class="bg-purple-950 text-white rounded-xl p-5 shadow-md border border-purple-800 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-uitm-gold/20 border border-uitm-gold flex items-center justify-center text-uitm-gold flex-shrink-0">
+                            <i data-lucide="file-up" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-extrabold text-sm text-white flex items-center">
+                                Upload Full Semester PO Attainment Excel Report (.xlsx)
+                                <span class="ml-2 text-[10px] bg-emerald-500 text-white font-extrabold px-1.5 py-0.5 rounded">AUTOMATED PARSER</span>
+                            </h4>
+                            <p class="text-xs text-purple-200 mt-0.5">Upload full semester assessment files (e.g., DUMMY 20264 PO ATTAINMENT.xlsx) to dynamically parse & update reports live.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 w-full md:w-auto">
+                        <input type="file" id="semesterExcelFileInput" accept=".xlsx, .xls" class="hidden" onchange="handleSemesterExcelUpload(event)">
+                        <button onclick="document.getElementById('semesterExcelFileInput').click()" class="w-full md:w-auto bg-uitm-gold hover:bg-uitm-goldHover text-uitm-purple font-extrabold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center transition shadow-md">
+                            <i data-lucide="upload-cloud" class="w-4 h-4 mr-2"></i> Choose Semester Excel (.xlsx)
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Dynamic Header Banner -->
+                <div class="bg-gradient-to-r from-uitm-purpleDark to-uitm-purple text-white rounded-xl p-5 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-uitm-gold text-uitm-purple font-extrabold px-2.5 py-0.5 rounded text-xs uppercase" id="detailBadge">Cohort View</span>
+                            <span class="text-purple-200 text-xs" id="detailSubtitle">UiTM Sarawak Electrical Engineering</span>
+                        </div>
+                        <h3 class="text-xl font-extrabold mt-1 text-white" id="detailTitle">Cohort Analysis</h3>
+                        <p class="text-xs text-purple-200 mt-0.5" id="detailDescription">Tracking student growth and PO attainment across semesters.</p>
+                    </div>
+
+                    <div class="flex items-center space-x-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/20">
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase text-purple-200 font-medium block">Average Attainment</span>
+                            <span class="text-2xl font-extrabold text-uitm-gold" id="detailAvgScore">0.00%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cohort Comparative / Radar Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Chart 1: Radar Profile -->
+                    <div class="lg:col-span-5 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col print-break-inside-prevent">
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b pb-2 flex items-center justify-between">
+                            <span class="flex items-center"><i data-lucide="radar" class="w-4 h-4 mr-1.5 text-uitm-purple"></i> Radar Attainment Profile</span>
+                        </h4>
+                        <div class="relative flex-1 min-h-[300px]">
+                            <canvas id="detailRadarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Bar Comparison / Delta Chart -->
+                    <div class="lg:col-span-7 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col print-break-inside-prevent">
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b pb-2 flex items-center justify-between">
+                            <span class="flex items-center"><i data-lucide="bar-chart-3" class="w-4 h-4 mr-1.5 text-uitm-purple"></i> Outcome Attainment Breakdown</span>
+                            <span class="text-[11px] font-normal text-slate-500">Benchmark: <strong class="text-slate-700" id="chartBenchmarkLabel">50%</strong></span>
+                        </h4>
+                        <div class="relative flex-1 min-h-[300px]">
+                            <canvas id="detailBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PO Detailed Cards Grid -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex items-center justify-between mb-4 border-b pb-2">
+                        <h4 class="text-sm font-bold text-slate-800">Program Outcomes (PO1–PO11) Status Cards</h4>
+                        <span class="text-xs text-slate-500">Filter by threshold: ≥ 50% target</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="detailCardsGrid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ETAC 11 PO Reference Footer Section -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 no-print">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-800 flex items-center">
+                            <i data-lucide="book-open" class="w-5 h-5 mr-2 text-uitm-purple"></i>
+                            ETAC Revised 11 Program Outcomes (POs) Standard
+                        </h3>
+                        <p class="text-xs text-slate-500">Official accreditation descriptors for Diploma in Electrical Engineering</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="poRefGrid">
+                    <!-- JS injects 11 PO cards -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal: ETAC 11 PO Definitions Drawer -->
+    <div id="etacModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+            <div class="p-5 bg-uitm-purple text-white flex justify-between items-center">
+                <div>
+                    <h3 class="font-extrabold text-lg flex items-center"><i data-lucide="award" class="w-5 h-5 mr-2 text-uitm-gold"></i> ETAC 11 Program Outcomes Standard</h3>
+                    <p class="text-xs text-purple-200 mt-0.5">Engineering Technology Accreditation Council Latest Standards</p>
+                </div>
+                <button onclick="closeEtacModal()" class="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-3 flex-1 text-xs" id="modalPoList">
+                <!-- JS populated -->
+            </div>
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button onclick="closeEtacModal()" class="bg-uitm-purple text-white font-bold px-4 py-2 rounded-lg hover:bg-uitm-purpleDark">Close Reference</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Official ETAC Revised 11 Program Outcomes
+        const ETAC_POS = [
+            { id: "PO1", name: "Engineering Knowledge", desc: "Apply math, science, and engineering fundamentals to defined procedures." },
+            { id: "PO2", name: "Problem Analysis", desc: "Identify, formulate, and analyze engineering problems." },
+            { id: "PO3", name: "Design/Development of Solutions", desc: "Design solutions and systems to meet specified needs." },
+            { id: "PO4", name: "Investigation", desc: "Conduct investigations and experiments including data analysis." },
+            { id: "PO5", name: "Modern Tool Usage", desc: "Apply appropriate techniques and modern tools to engineering activities." },
+            { id: "PO6", name: "The Engineer and the World / Society", desc: "Demonstrate understanding of societal, safety, and sustainability impacts." },
+            { id: "PO7", name: "Ethics", desc: "Understand and commit to professional ethics and inclusivity." },
+            { id: "PO8", name: "Individual and Team Work", desc: "Function effectively as an individual or team leader." },
+            { id: "PO9", name: "Communication", desc: "Communicate effectively on engineering activities." },
+            { id: "PO10", name: "Project Management and Finance", desc: "Apply engineering management and economic decision-making principles." },
+            { id: "PO11", name: "Lifelong Learning", desc: "Engage in independent and lifelong learning." }
+        ];
+
+        // Subject structure matching reference sheet
+        const ADMIN_SUBJECT_SCHEMA = [
+            {
+                part: "PART 1", semester: "20254",
+                courses: [
+                    { code: "ECE128: Computer Programming", activePOs: [1, 5, 10], initialVals: { 1: 66, 5: 90, 10: 85 } },
+                    { code: "EEE111: Electro-Technology", activePOs: [4, 6, 8, 9], initialVals: { 4: 88, 6: 70, 8: 88, 9: 78 } }
+                ]
+            },
+            {
+                part: "PART 2", semester: "20262",
+                courses: [
+                    { code: "EEE121: Electric Circuits I", activePOs: [1, 2, 4], initialVals: { 1: 58, 2: 46, 4: 86 } },
+                    { code: "ESE122: Electrical Measurement", activePOs: [1, 2, 4], initialVals: { 1: 50, 2: 62, 4: 85 } },
+                    { code: "EEE150: Safety, Health and Ethics", activePOs: [6, 7, 8], initialVals: {} }
+                ]
+            },
+            {
+                part: "PART 3", semester: "20264",
+                courses: [
+                    { code: "EEE250: Electrical Engineering Lab", activePOs: [1, 4, 5], initialVals: {} },
+                    { code: "ELE232: Electronics 1", activePOs: [1, 2, 3], initialVals: {} },
+                    { code: "EEE231: Electric Circuit 2", activePOs: [1, 2, 3], initialVals: {} },
+                    { code: "ECM241: Basic Communication Eng.", activePOs: [1, 4, 5], initialVals: {} }
+                ]
+            },
+            {
+                part: "PART 4", semester: "20272",
+                courses: [
+                    { code: "ESE241: Linear System", activePOs: [1, 2, 4], initialVals: {} },
+                    { code: "ELE242: Electronics 2", activePOs: [1, 2, 3], initialVals: {} },
+                    { code: "ECE351: Digital Systems 1", activePOs: [1, 2, 5], initialVals: {} },
+                    { code: "ELE355: Electronics Design", activePOs: [3, 4, 10], initialVals: {} },
+                    { code: "EEE358: Final Year Project 1", activePOs: [3, 4, 8, 9, 11], initialVals: {} }
+                ]
+            },
+            {
+                part: "PART 5", semester: "20274",
+                courses: [
+                    { code: "ESE359: Control System", activePOs: [1, 2, 4], initialVals: {} },
+                    { code: "ECE354: Microprocessor Systems", activePOs: [1, 2, 5], initialVals: {} },
+                    { code: "EPO244: Basic Power Engineering", activePOs: [1, 2, 4], initialVals: {} },
+                    { code: "ELE245: Intro to Microelectronics", activePOs: [1, 2, 3], initialVals: {} },
+                    { code: "ELE351: Electronics 3", activePOs: [1, 2, 3], initialVals: {} },
+                    { code: "EEE368: Final Year Project 2", activePOs: [3, 4, 8, 9, 10, 11], initialVals: {} }
+                ]
+            },
+            {
+                part: "PART 6", semester: "20282",
+                courses: [
+                    { code: "EEE351: Industrial Training", activePOs: [6, 7, 8, 9, 11], initialVals: {} }
+                ]
+            }
+        ];
+
+        // Exact Attainment Dataset from Excel
+        const DATASET = {
+            "sem-20254": {
+                "part1": { PO1: 65.74, PO2: null, PO3: null, PO4: 87.71, PO5: 89.97, PO6: 70.19, PO7: null, PO8: 88.47, PO9: 81.49, PO10: null, PO11: null },
+                "part3": { PO1: 66.52, PO2: 65.16, PO3: null, PO4: 85.93, PO5: 89.16, PO6: 86.85, PO7: 76.32, PO8: 79.90, PO9: 77.59, PO10: null, PO11: null },
+                "part5": { PO1: 66.01, PO2: 67.34, PO3: 67.97, PO4: 80.75, PO5: 83.73, PO6: 79.92, PO7: 77.25, PO8: 88.25, PO9: 74.30, PO10: 81.15, PO11: 81.29 }
+            },
+            "sem-20262": {
+                "part2": { PO1: 57.90, PO2: 53.73, PO3: null, PO4: 86.65, PO5: 89.97, PO6: 77.03, PO7: null, PO8: 84.06, PO9: 81.49, PO10: null, PO11: null },
+                "part4": { PO1: 66.81, PO2: 61.44, PO3: 71.00, PO4: 84.74, PO5: 84.62, PO6: 86.85, PO7: 76.32, PO8: 79.90, PO9: 77.59, PO10: 84.23, PO11: 82.43 },
+                "part6": { PO1: 66.01, PO2: 67.34, PO3: 67.97, PO4: 80.75, PO5: 83.48, PO6: 80.54, PO7: 76.16, PO8: 88.25, PO9: 74.30, PO10: 81.15, PO11: 81.29 }
+            },
+            "sem-20264": {
+                "part1": { PO1: 50.00, PO2: 50.00, PO3: null, PO4: 60.00, PO5: 60.00, PO6: 60.00, PO7: null, PO8: 70.00, PO9: 70.00, PO10: null, PO11: null },
+                "part3": { PO1: 40.00, PO2: 40.00, PO3: 40.00, PO4: 40.00, PO5: 40.00, PO6: 40.00, PO7: 40.00, PO8: 40.00, PO9: 40.00, PO10: 40.00, PO11: 40.00 },
+                "part5": { PO1: 50.00, PO2: 50.00, PO3: 50.00, PO4: 50.00, PO5: 50.00, PO6: 50.00, PO7: 50.00, PO8: 40.00, PO9: 30.00, PO10: 20.00, PO11: 10.00 }
+            }
+        };
+
+        
+        // Automated Semester Report Excel File Parser (SheetJS)
+        function handleSemesterExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    let updatedSheets = [];
+
+                    workbook.SheetNames.forEach(sheetName => {
+                        const cleanSheetKey = "sem-" + String(sheetName).trim();
+                        const sheet = workbook.Sheets[sheetName];
+                        const jsonRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                        let partsData = {};
+                        jsonRows.forEach((row, rowIdx) => {
+                            if (!row || row.length === 0) return;
+                            const val0 = String(row[0] || "").trim();
+                            if (val0.toUpperCase().startsWith('PART')) {
+                                const partKey = val0.toLowerCase().replace(/\s+/g, '');
+                                const poHeaders = row.slice(1).map(x => String(x || "").trim());
+                                const avgRow = jsonRows[rowIdx + 1];
+                                if (avgRow) {
+                                    let partData = {};
+                                    poHeaders.forEach((poCode, colIdx) => {
+                                        if (poCode.startsWith("PO")) {
+                                            const rawVal = avgRow[colIdx + 1];
+                                            if (rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== "" && !isNaN(rawVal)) {
+                                                partData[poCode] = Math.round(parseFloat(rawVal) * 100) / 100;
+                                            } else {
+                                                partData[poCode] = null;
+                                            }
+                                        }
+                                    });
+                                    partsData[partKey] = partData;
+                                }
+                            }
+                        });
+
+                        if (Object.keys(partsData).length > 0) {
+                            DATASET[cleanSheetKey] = partsData;
+                            updatedSheets.push(sheetName);
+                        }
+                    });
+
+                    if (updatedSheets.length > 0) {
+                        renderSummaryTable();
+                        initSummaryCharts();
+                        
+                        const activeTab = document.querySelector('.sidebar-active')?.id?.replace('nav-', '');
+                        if (activeTab && DATASET[activeTab]) {
+                            renderDetailView(activeTab);
+                        } else {
+                            const targetSem = "sem-" + updatedSheets[0];
+                            switchTab(targetSem);
+                        }
+
+                        alert(`Successfully imported Full Assessment Report data for: ${updatedSheets.join(', ')}! The dashboard has been updated live.`);
+                    } else {
+                        alert("No valid semester PO attainment tables found in the uploaded file. Ensure sheets contain 'PART' headers and 'PO AVERAGE' rows.");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Error reading Excel file. Please ensure it is a valid .xlsx or .xls file.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        let currentBenchmark = 50.0;
+        let summaryBarChartInstance = null;
+        let progressionChartInstance = null;
+        let detailRadarInstance = null;
+        let detailBarInstance = null;
+        let adminVisualizationChartInstance = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderPoReferenceGrid();
+            renderSummaryTable();
+            initSummaryCharts();
+            renderAdminEntryTable();
+            initAdminVisualizationChart();
+            recalculateAdminData();
+        });
+
+        function updateBenchmarkThreshold(val) {
+            currentBenchmark = parseFloat(val);
+            document.getElementById('benchmarkValDisplay').innerText = currentBenchmark.toFixed(1) + '%';
+            document.getElementById('sliderLabel').innerText = currentBenchmark + '%';
+            document.getElementById('chartBenchmarkLabel').innerText = currentBenchmark + '%';
+
+            renderSummaryTable();
+            
+            // Refresh Active View Charts
+            const activeTab = document.querySelector('.sidebar-active').id.replace('nav-', '');
+            if (activeTab !== 'summary' && activeTab !== 'admin-entry') {
+                renderDetailView(activeTab);
+            }
+        }
+
+        function renderAdminEntryTable() {
+            const tbody = document.getElementById('adminEntryTableBody');
+            let html = '';
+
+            ADMIN_SUBJECT_SCHEMA.forEach((partGroup, groupIdx) => {
+                html += `
+                    <tr class="bg-purple-900 text-white font-bold">
+                        <td colspan="12" class="p-2 text-xs uppercase tracking-wider">
+                            ${partGroup.part} — Semester ${partGroup.semester}
+                        </td>
+                    </tr>
+                `;
+
+                partGroup.courses.forEach((course, courseIdx) => {
+                    html += `<tr class="border-b border-slate-200 hover:bg-slate-50">`;
+                    html += `<td class="p-2 font-medium text-slate-800 bg-slate-50 border-r border-slate-200">${course.code}</td>`;
+
+                    for (let poNum = 1; poNum <= 11; poNum++) {
+                        const isActive = course.activePOs.includes(poNum);
+                        const cellId = `input_${groupIdx}_${courseIdx}_${poNum}`;
+                        const initVal = course.initialVals[poNum] !== undefined ? course.initialVals[poNum] : '';
+
+                        if (isActive) {
+                            html += `
+                                <td class="p-1 border border-slate-200 text-center">
+                                    <input type="number" min="0" max="100" id="${cellId}" 
+                                        value="${initVal}" placeholder="%" 
+                                        oninput="recalculateAdminData()"
+                                        class="input-po-white text-xs">
+                                </td>
+                            `;
+                        } else {
+                            html += `
+                                <td class="p-1 border border-slate-800 po-black-cell text-center font-mono text-[10px]">
+                                    N/A
+                                </td>
+                            `;
+                        }
+                    }
+                    html += `</tr>`;
+                });
+
+                // PO AVERAGE ROW PER PART
+                html += `
+                    <tr class="bg-amber-100 font-bold border-t-2 border-b-2 border-amber-300 text-slate-800">
+                        <td class="p-2 text-amber-950 font-extrabold text-xs">PO AVERAGE (${partGroup.part})</td>
+                        ${Array.from({ length: 11 }, (_, i) => `<td class="p-2 text-center text-xs font-mono font-extrabold text-uitm-purple" id="avg_${groupIdx}_${i + 1}">#DIV/0!</td>`).join('')}
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function recalculateAdminData() {
+            const partAverages = [];
+
+            ADMIN_SUBJECT_SCHEMA.forEach((partGroup, groupIdx) => {
+                const poSums = Array(12).fill(0);
+                const poCounts = Array(12).fill(0);
+
+                partGroup.courses.forEach((course, courseIdx) => {
+                    for (let poNum = 1; poNum <= 11; poNum++) {
+                        if (course.activePOs.includes(poNum)) {
+                            const inputElem = document.getElementById(`input_${groupIdx}_${courseIdx}_${poNum}`);
+                            if (inputElem && inputElem.value !== '') {
+                                const val = parseFloat(inputElem.value);
+                                if (!isNaN(val)) {
+                                    poSums[poNum] += val;
+                                    poCounts[poNum] += 1;
+                                }
+                            }
+                        }
+                    }
+                });
+
+                const groupAvgObj = {};
+                for (let poNum = 1; poNum <= 11; poNum++) {
+                    const avgTd = document.getElementById(`avg_${groupIdx}_${poNum}`);
+                    if (poCounts[poNum] > 0) {
+                        const avgVal = poSums[poNum] / poCounts[poNum];
+                        groupAvgObj[`PO${poNum}`] = avgVal;
+                        if (avgTd) {
+                            avgTd.innerText = avgVal.toFixed(2) + '%';
+                            avgTd.className = "p-2 text-center text-xs font-mono font-extrabold text-emerald-800 bg-emerald-100/60";
+                        }
+                    } else {
+                        groupAvgObj[`PO${poNum}`] = null;
+                        if (avgTd) {
+                            avgTd.innerText = '#DIV/0!';
+                            avgTd.className = "p-2 text-center text-xs font-mono font-semibold text-amber-700 bg-amber-50";
+                        }
+                    }
+                }
+                partAverages.push({ part: partGroup.part, averages: groupAvgObj });
+            });
+
+            updateAdminVisualizationChart(partAverages);
+        }
+
+        function initAdminVisualizationChart() {
+            const ctx = document.getElementById('adminVisualizationChart').getContext('2d');
+            adminVisualizationChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ETAC_POS.map(p => p.id),
+                    datasets: [
+                        { label: 'Part 1 (Sem 20254)', data: Array(11).fill(0), backgroundColor: '#3A0066', borderRadius: 4 },
+                        { label: 'Part 2 (Sem 20262)', data: Array(11).fill(0), backgroundColor: '#FFAE00', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { min: 0, max: 100 } }
+                }
+            });
+        }
+
+        function updateAdminVisualizationChart(partAverages) {
+            if (!adminVisualizationChartInstance) return;
+            const p1Avg = partAverages[0] ? ETAC_POS.map(p => partAverages[0].averages[p.id] || 0) : [];
+            const p2Avg = partAverages[1] ? ETAC_POS.map(p => partAverages[1].averages[p.id] || 0) : [];
+
+            adminVisualizationChartInstance.data.datasets[0].data = p1Avg;
+            adminVisualizationChartInstance.data.datasets[1].data = p2Avg;
+            adminVisualizationChartInstance.update();
+        }
+
+        function renderSummaryTable() {
+            const tbody = document.getElementById('summaryTableBody');
+            tbody.innerHTML = ETAC_POS.map(po => {
+                const p1 = DATASET["sem-20254"].part1[po.id];
+                const p3 = DATASET["sem-20254"].part3[po.id];
+                const p5 = DATASET["sem-20254"].part5[po.id];
+
+                const p2 = DATASET["sem-20262"].part2[po.id];
+                const p4 = DATASET["sem-20262"].part4[po.id];
+                const p6 = DATASET["sem-20262"].part6[po.id];
+
+                const formatCell = (val) => {
+                    if (val === null || val === undefined) return `<span class="text-slate-300 font-mono">-</span>`;
+                    const isPass = val >= currentBenchmark;
+                    const badgeClass = isPass ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800';
+                    return `<span class="px-2 py-0.5 rounded font-mono font-bold ${badgeClass}">${val.toFixed(2)}%</span>`;
+                };
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-2.5 px-3 font-mono font-bold text-uitm-purple">${po.id}</td>
+                        <td class="py-2.5 px-3 font-medium text-slate-700">${po.name}</td>
+                        <td class="py-2.5 px-3 text-center bg-purple-50/40">${formatCell(p1)}</td>
+                        <td class="py-2.5 px-3 text-center bg-purple-50/40">${formatCell(p3)}</td>
+                        <td class="py-2.5 px-3 text-center bg-purple-50/40">${formatCell(p5)}</td>
+                        <td class="py-2.5 px-3 text-center bg-amber-50/40">${formatCell(p2)}</td>
+                        <td class="py-2.5 px-3 text-center bg-amber-50/40">${formatCell(p4)}</td>
+                        <td class="py-2.5 px-3 text-center bg-amber-50/40">${formatCell(p6)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterSummaryTable() {
+            const query = document.getElementById('summarySearchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#summaryTableBody tr');
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        function initSummaryCharts() {
+            const avg20254 = ETAC_POS.map(po => {
+                const vals = [DATASET["sem-20254"].part1[po.id], DATASET["sem-20254"].part3[po.id], DATASET["sem-20254"].part5[po.id]].filter(v => v !== null);
+                return vals.length > 0 ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : 0;
+            });
+
+            const avg20262 = ETAC_POS.map(po => {
+                const vals = [DATASET["sem-20262"].part2[po.id], DATASET["sem-20262"].part4[po.id], DATASET["sem-20262"].part6[po.id]].filter(v => v !== null);
+                return vals.length > 0 ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : 0;
+            });
+
+            const ctxBar = document.getElementById('summaryBarChart').getContext('2d');
+            summaryBarChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ETAC_POS.map(p => p.id),
+                    datasets: [
+                        { label: 'Sem 20254 Average (%)', data: avg20254, backgroundColor: '#3A0066', borderRadius: 4 },
+                        { label: 'Sem 20262 Average (%)', data: avg20262, backgroundColor: '#FFAE00', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { min: 40, max: 100 } }
+                }
+            });
+
+            const parts = [
+                { name: 'Part 1', val: calculateGroupAvg(DATASET["sem-20254"].part1) },
+                { name: 'Part 2', val: calculateGroupAvg(DATASET["sem-20262"].part2) },
+                { name: 'Part 3', val: calculateGroupAvg(DATASET["sem-20254"].part3) },
+                { name: 'Part 4', val: calculateGroupAvg(DATASET["sem-20262"].part4) },
+                { name: 'Part 5', val: calculateGroupAvg(DATASET["sem-20254"].part5) },
+                { name: 'Part 6', val: calculateGroupAvg(DATASET["sem-20262"].part6) }
+            ];
+
+            const ctxLine = document.getElementById('progressionLineChart').getContext('2d');
+            progressionChartInstance = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: parts.map(p => p.name),
+                    datasets: [{
+                        label: 'Overall Attainment (%)',
+                        data: parts.map(p => p.val),
+                        borderColor: '#3A0066',
+                        backgroundColor: 'rgba(58, 0, 102, 0.1)',
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#FFAE00',
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { min: 60, max: 90 } }
+                }
+            });
+        }
+
+        function calculateGroupAvg(scoresObj) {
+            const vals = Object.values(scoresObj).filter(v => v !== null);
+            return (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2);
+        }
+
+        function switchTab(tabKey) {
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('sidebar-active'));
+            const activeBtn = document.getElementById(`nav-${tabKey}`);
+            if (activeBtn) activeBtn.classList.add('sidebar-active');
+
+            // Hide all main view containers
+            document.getElementById('view-summary').classList.add('hidden');
+            document.getElementById('view-admin-entry').classList.add('hidden');
+            document.getElementById('view-detail').classList.add('hidden');
+
+            if (tabKey === 'summary') {
+                document.getElementById('view-summary').classList.remove('hidden');
+                document.getElementById('pageTitle').innerText = 'Executive Summary Dashboard';
+                document.getElementById('pageSubtitle').innerText = 'Program Outcome Attainment Analysis (Semesters 20254 & 20262)';
+            } else if (tabKey === 'admin-entry') {
+                document.getElementById('view-admin-entry').classList.remove('hidden');
+                document.getElementById('pageTitle').innerText = 'Subject PO Entry (Admin Worksheet)';
+                document.getElementById('pageSubtitle').innerText = 'Input Subject-Specific PO Attainments & Dynamic Calculations';
+            } else {
+                document.getElementById('view-detail').classList.remove('hidden');
+                renderDetailView(tabKey);
+            }
+        }
+
+        function renderDetailView(key) {
+            let title = "", subtitle = "", badge = "", ds1 = null, ds2 = null, ds3 = null, label1 = "", label2 = "", label3 = "";
+
+            if (key === 'cohort-20254') {
+                badge = "Cohort 20254";
+                title = "Cohort 20254 Longitudinal Growth";
+                subtitle = "Tracking Part 1 (Sem 20254) → Part 2 (Sem 20262)";
+                ds1 = DATASET["sem-20254"].part1;
+                ds2 = DATASET["sem-20262"].part2;
+                label1 = "Part 1 (Sem 20254)";
+                label2 = "Part 2 (Sem 20262)";
+            } else if (key === 'cohort-20244') {
+                badge = "Cohort 20244";
+                title = "Cohort 20244 Longitudinal Growth";
+                subtitle = "Tracking Part 3 (Sem 20254) → Part 4 (Sem 20262)";
+                ds1 = DATASET["sem-20254"].part3;
+                ds2 = DATASET["sem-20262"].part4;
+                label1 = "Part 3 (Sem 20254)";
+                label2 = "Part 4 (Sem 20262)";
+            } else if (key === 'cohort-20234') {
+                badge = "Cohort 20234 (Graduating)";
+                title = "Cohort 20234 Final Year Attainment";
+                subtitle = "Tracking Part 5 (Sem 20254) → Part 6 (Sem 20262)";
+                ds1 = DATASET["sem-20254"].part5;
+                ds2 = DATASET["sem-20262"].part6;
+                label1 = "Part 5 (Sem 20254)";
+                label2 = "Part 6 (Sem 20262)";
+            } else if (key === 'sem-20254') {
+                badge = "Semester 20254";
+                title = "Semester 20254 Full Assessment (Oct 25 - Feb 26)";
+                subtitle = "Cross-sectional analysis for Part 1, Part 3, and Part 5";
+                ds1 = DATASET["sem-20254"].part1;
+                ds2 = DATASET["sem-20254"].part3;
+                ds3 = DATASET["sem-20254"].part5;
+                label1 = "Part 1 Average";
+                label2 = "Part 3 Average";
+                label3 = "Part 5 Average";
+            } else if (key === 'sem-20262') {
+                badge = "Semester 20262";
+                title = "Semester 20262 Full Assessment (Mar 26 - Aug 26)";
+                subtitle = "Cross-sectional analysis for Part 2, Part 4, and Part 6";
+                ds1 = DATASET["sem-20262"].part2;
+                ds2 = DATASET["sem-20262"].part4;
+                ds3 = DATASET["sem-20262"].part6;
+                label1 = "Part 2 Average";
+                label2 = "Part 4 Average";
+                label3 = "Part 6 Average";
+            } else if (key === 'sem-20264') {
+                badge = "Semester 20264 (Upcoming)";
+                title = "Semester 20264 Full Assessment Report (Oct 26 - Feb 27)";
+                subtitle = "Full PO Attainment Report for Part 1, Part 3, and Part 5";
+                ds1 = DATASET["sem-20264"].part1;
+                ds2 = DATASET["sem-20264"].part3;
+                ds3 = DATASET["sem-20264"].part5;
+                label1 = "Part 1 (Oct 26)";
+                label2 = "Part 3 (Oct 26)";
+                label3 = "Part 5 (Oct 26)";
+            }
+
+            document.getElementById('pageTitle').innerText = title;
+            document.getElementById('pageSubtitle').innerText = subtitle;
+            document.getElementById('detailBadge').innerText = badge;
+            document.getElementById('detailTitle').innerText = title;
+            document.getElementById('detailSubtitle').innerText = subtitle;
+
+            const availGroupAvgs = [ds1, ds2, ds3].filter(d => d !== null && d !== undefined).map(d => parseFloat(calculateGroupAvg(d)));
+            const overallAvg = (availGroupAvgs.reduce((a, b) => a + b, 0) / availGroupAvgs.length).toFixed(2);
+            document.getElementById('detailAvgScore').innerText = `${overallAvg}%`;
+
+            const cardsGrid = document.getElementById('detailCardsGrid');
+            cardsGrid.innerHTML = ETAC_POS.map(po => {
+                const val1 = ds1 ? ds1[po.id] : null;
+                const val2 = ds2 ? ds2[po.id] : null;
+                const val3 = ds3 ? ds3[po.id] : null;
+
+                const validVals = [val1, val2, val3].filter(v => v !== null && v !== undefined);
+                const latestVal = validVals.length > 0 ? validVals[validVals.length - 1] : null;
+
+                let deltaHtml = `<span class="text-slate-400 text-[10px]">N/A</span>`;
+                if (validVals.length >= 2) {
+                    const diff = (validVals[validVals.length - 1] - validVals[0]).toFixed(2);
+                    if (diff > 0) {
+                        deltaHtml = `<span class="text-emerald-600 font-bold text-xs flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-0.5"></i>+${diff}%</span>`;
+                    } else if (diff < 0) {
+                        deltaHtml = `<span class="text-amber-600 font-bold text-xs flex items-center"><i data-lucide="trending-down" class="w-3 h-3 mr-0.5"></i>${diff}%</span>`;
+                    } else {
+                        deltaHtml = `<span class="text-slate-500 font-bold text-xs">0.00%</span>`;
+                    }
+                }
+
+                const scoreDisplay = latestVal !== null ? `${latestVal.toFixed(2)}%` : 'Not Assessed';
+                const isPass = latestVal !== null && latestVal >= currentBenchmark;
+
+                return `
+                    <div class="p-4 border border-slate-200 rounded-xl bg-slate-50 flex flex-col justify-between shadow-sm">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-extrabold text-xs text-uitm-purple bg-purple-100 px-2 py-0.5 rounded font-mono">${po.id}</span>
+                                ${latestVal === null 
+                                    ? '<span class="bg-slate-200 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">Unassessed</span>'
+                                    : (isPass 
+                                        ? '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">Pass</span>'
+                                        : '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-[10px] font-bold">CQI Required</span>')
+                                }
+                            </div>
+                            <h5 class="text-xs font-bold text-slate-800">${po.name}</h5>
+                            <p class="text-[11px] text-slate-500 mt-1 line-clamp-2">${po.desc}</p>
+                        </div>
+                        <div class="mt-4 pt-2 border-t border-slate-200/80 flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] text-slate-400 block uppercase font-bold">Overall Delta</span>
+                                ${deltaHtml}
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-slate-400 block uppercase font-bold">Latest Score</span>
+                                <span class="text-base font-extrabold font-mono ${isPass ? 'text-slate-800' : 'text-red-600'}">${scoreDisplay}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+
+            // Radar Datasets
+            const radarDatasets = [
+                { label: label1, data: ETAC_POS.map(p => (ds1 && ds1[p.id]) || 0), borderColor: '#3A0066', backgroundColor: 'rgba(58, 0, 102, 0.15)' },
+                { label: label2, data: ETAC_POS.map(p => (ds2 && ds2[p.id]) || 0), borderColor: '#FFAE00', backgroundColor: 'rgba(255, 174, 0, 0.2)' }
+            ];
+            if (ds3) {
+                radarDatasets.push({ label: label3, data: ETAC_POS.map(p => (ds3 && ds3[p.id]) || 0), borderColor: '#0284C7', backgroundColor: 'rgba(2, 132, 199, 0.2)' });
+            }
+
+            if (detailRadarInstance) detailRadarInstance.destroy();
+            const ctxRadar = document.getElementById('detailRadarChart').getContext('2d');
+            detailRadarInstance = new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ETAC_POS.map(p => p.id),
+                    datasets: radarDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { r: { min: 0, max: 100 } }
+                }
+            });
+
+            // Bar Datasets
+            const barDatasets = [
+                { label: label1, data: ETAC_POS.map(p => (ds1 && ds1[p.id]) || 0), backgroundColor: '#3A0066', borderRadius: 4 },
+                { label: label2, data: ETAC_POS.map(p => (ds2 && ds2[p.id]) || 0), backgroundColor: '#FFAE00', borderRadius: 4 }
+            ];
+            if (ds3) {
+                barDatasets.push({ label: label3, data: ETAC_POS.map(p => (ds3 && ds3[p.id]) || 0), backgroundColor: '#0284C7', borderRadius: 4 });
+            }
+
+            if (detailBarInstance) detailBarInstance.destroy();
+            const ctxBar = document.getElementById('detailBarChart').getContext('2d');
+            detailBarInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ETAC_POS.map(p => p.id),
+                    datasets: barDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { min: 0, max: 100 } }
+                }
+            });
+        }
+
+        function renderPoReferenceGrid() {
+            const grid = document.getElementById('poRefGrid');
+            const modalList = document.getElementById('modalPoList');
+
+            grid.innerHTML = ETAC_POS.map(po => `
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="font-extrabold text-xs text-uitm-purple bg-purple-100 px-2 py-0.5 rounded font-mono">${po.id}</span>
+                        <span class="font-bold text-xs text-slate-800">${po.name}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600">${po.desc}</p>
+                </div>
+            `).join('');
+
+            modalList.innerHTML = ETAC_POS.map(po => `
+                <div class="p-3 border-b border-slate-100 last:border-0 flex items-start space-x-3">
+                    <span class="font-extrabold text-xs text-uitm-purple bg-purple-100 px-2.5 py-1 rounded font-mono flex-shrink-0">${po.id}</span>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-xs">${po.name}</h4>
+                        <p class="text-slate-600 text-[11px] mt-0.5">${po.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openEtacModal() {
+            document.getElementById('etacModal').classList.remove('hidden');
+        }
+
+        function closeEtacModal() {
+            document.getElementById('etacModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
